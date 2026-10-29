@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tuckaway</title>
+  <meta name="description" content="Remap the buttons, tune the DPI and set the lighting of a Logitech G502 HERO without G HUB. Everything is saved in the mouse.">
+  <meta property="og:title" content="Tuckaway">
+  <meta property="og:description" content="Your mouse settings, tucked away inside the mouse.">
+  <meta property="og:image" content="https://maxikozie.github.io/Tuckaway/assets/banner-dark.png">
+  <link rel="icon" href="assets/logo-small.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin>
+  <style>
+    @font-face {
+      font-family: "Instrument Sans";
+      src: url("assets/fonts/instrument-sans.woff2") format("woff2");
+      font-weight: 400 700;
+      font-stretch: 75% 100%;
+      font-display: swap;
+    }
+    :root {
+      --bg: #1c1c1f;
+      --stage: #36373c;
+      --raised: #27272b;
+      --text: #ecebe7;
+      --text-2: #a7a59f;
+      --text-3: #75736e;
+      --hair: rgb(255 255 255 / 0.08);
+      --accent: #f2a23a;
+      --accent-ink: #1c1c1f;
+      --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 450 16px/1.55 "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+    /* top bar: the app's own */
+    header {
+      position: sticky; top: 0; z-index: 10;
+      height: 60px;
+      display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+      padding: 0 20px;
+      background: rgb(28 28 31 / 0.82);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid transparent;
+      transition: border-color 200ms var(--ease);
+    }
+    header.scrolled { border-bottom-color: var(--hair); }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
+    .brand img { width: 28px; height: 28px; }
+    .tabs { position: relative; display: flex; gap: 6px; }
+    .tabs button {
+      height: 60px; padding: 0 12px;
+      background: none; border: 0; cursor: pointer;
+      font: inherit; font-size: 15px; font-weight: 520; color: var(--text-2);
+      transition: color 180ms var(--ease);
+    }
+    .tabs button:hover, .tabs button[aria-selected="true"] { color: var(--text); }
+    .tabs .bar {
+      position: absolute; left: 0; bottom: 12px; height: 2px; border-radius: 2px; background: var(--accent);
+      transition: translate 240ms var(--ease), width 240ms var(--ease);
+    }
+    .right { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
+    .icon-link { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; color: var(--text-2); transition: background-color 180ms var(--ease), color 180ms var(--ease); }
+    .icon-link:hover { color: var(--text); background: rgb(255 255 255 / 0.06); }
+    .icon-link svg { width: 20px; height: 20px; fill: currentColor; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 36px; padding: 0 16px; border-radius: 9px;
+      font-weight: 580; text-decoration: none; white-space: nowrap;
+      transition: filter 180ms var(--ease), background-color 180ms var(--ease);
+    }
+    .btn.primary { background: var(--accent); color: var(--accent-ink); }
+    .btn.primary:hover { filter: brightness(1.08); }
+    .btn.ghost { color: var(--text-2); }
+    .btn.ghost:hover { color: var(--text); background: rgb(255 255 255 / 0.06); }
+    .btn.big { height: 46px; padding: 0 22px; font-size: 16.5px; border-radius: 11px; }
+    .btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* stage */
+    .stage {
+      position: relative;
+      padding: 76px 24px 40px;
+      background:
+        linear-gradient(to bottom, transparent 70%, var(--bg) 100%),
+        radial-gradient(ellipse 60% 62% at 50% 60%, var(--stage) 0%, #2a2b2f 42%, var(--bg) 100%);
+      text-align: center;
+    }
+    h1 {
+      margin: 0 auto;
+      max-width: 17ch;
+      text-wrap: balance;
+      font-size: clamp(38px, 5.6vw, 66px);
+      line-height: 1.04;
+      font-weight: 640;
+      letter-spacing: -0.035em;
+    }
+    .lede { margin: 20px auto 0; max-width: 52ch; text-wrap: pretty; color: var(--text-2); font-size: 18px; }
+    .cta { margin-top: 30px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .fine { margin-top: 14px; color: var(--text-3); font-size: 14px; }
+
+    .window {
+      position: relative;
+      margin: 56px auto 0;
+      max-width: 1120px;
+      aspect-ratio: 1440 / 900;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #1c1c1f;
+      box-shadow: 0 40px 100px rgb(0 0 0 / 0.55), 0 0 0 1px var(--hair);
+    }
+    .window img {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+      opacity: 0; transition: opacity 260ms var(--ease);
+    }
+    .window img.on { opacity: 1; }
+    .caption { margin: 18px auto 0; min-height: 1.6em; color: var(--text-2); font-size: 16px; }
+
+    /* sections */
+    main { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+    section { padding: 88px 0 0; }
+    h2 { margin: 0 0 28px; font-size: 28px; font-weight: 620; letter-spacing: -0.02em; }
+    .points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+    .points h3 { margin: 0 0 8px; font-size: 17px; font-weight: 600; letter-spacing: -0.005em; }
+    .points p { margin: 0; color: var(--text-2); }
+    .points .mark { display: block; width: 28px; height: 3px; border-radius: 2px; background: var(--accent); margin-bottom: 18px; }
+
+    .safety { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 48px; margin: 0; padding: 0; list-style: none; }
+    .safety li { display: flex; gap: 12px; color: var(--text-2); }
+    .safety b { color: var(--text); font-weight: 580; }
+    .safety svg { flex: none; width: 18px; height: 18px; margin-top: 3px; fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+    details { border-top: 1px solid var(--hair); padding: 18px 0; }
+    details:last-of-type { border-bottom: 1px solid var(--hair); }
+    summary { cursor: pointer; list-style: none; font-weight: 560; font-size: 17px; display: flex; justify-content: space-between; gap: 16px; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--text-3); font-weight: 400; transition: rotate 200ms var(--ease); }
+    details[open] summary::after { rotate: 45deg; }
+    details p { margin: 10px 0 0; color: var(--text-2); max-width: 70ch; }
+
+    .closing { text-align: center; padding: 110px 0 40px; }
+    .closing h2 { font-size: 34px; margin-bottom: 26px; }
+
+    footer { max-width: 980px; margin: 0 auto; padding: 40px 24px 56px; color: var(--text-3); font-size: 14px; display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; border-top: 1px solid var(--hair); }
+    footer a { color: var(--text-2); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 820px) {
+      header { grid-template-columns: 1fr auto; }
+      .tabs { display: none; }
+      .right .btn.primary { display: none; }
+      .stage { padding-top: 52px; }
+      .points, .safety { grid-template-columns: 1fr; gap: 26px; }
+      .safety { gap: 14px; }
+      section { padding-top: 64px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <header id="top">
+    <a class="brand" href="#top"><img src="assets/logo-small.svg" alt="">Tuckaway</a>
+    <div class="tabs" role="tablist" aria-label="App views">
+      <button role="tab" aria-selected="true" data-view="buttons">Buttons</button>
+      <button role="tab" aria-selected="false" data-view="performance">Performance</button>
+      <button role="tab" aria-selected="false" data-view="lighting">Lighting</button>
+      <span class="bar" aria-hidden="true"></span>
+    </div>
+    <div class="right">
+      <a class="icon-link" href="https://github.com/Maxikozie/Tuckaway" aria-label="Source code on GitHub">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      </a>
+      <a class="btn primary" href="https://github.com/Maxikozie/Tuckaway/releases/latest/download/Tuckaway.exe">Download</a>
+    </div>
+  </header>
+
+  <div class="stage">
+    <h1>Your mouse settings, tucked away inside the mouse.</h1>
+    <p class="lede">Remap the buttons, tune the DPI and set the lighting of a Logitech G502 HERO. Then close the app: everything is stored in the mouse, with no G HUB and nothing running in the background.</p>
+    <div class="cta">
+      <a class="btn primary big" href="https://github.com/Maxikozie/Tuckaway/releases/latest/download/Tuckaway.exe">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
+        Download for Windows
+      </a>
+      <a class="btn ghost big" href="https://github.com/Maxikozie/Tuckaway">View on GitHub</a>
+    </div>
+    <p class="fine">Version 1.0.0 for Windows 10 and 11. One 4 MB file, no installer.</p>
+
+    <div class="window" aria-live="polite">
+      <img class="on" data-view="buttons" src="assets/buttons.png" alt="Tuckaway's Buttons view: every button of the mouse with a label saying what it does" width="1440" height="900">
+      <img data-view="performance" src="assets/performance.png" alt="Tuckaway's Performance view: DPI levels on one track and the report rate" width="1440" height="900" loading="lazy">
+      <img data-view="lighting" src="assets/lighting.png" alt="Tuckaway's Lighting view: the logo light selected, with effect, colour, speed and brightness" width="1440" height="900" loading="lazy">
+    </div>
+    <p class="caption" id="caption">Every button says what it does. Click one to give it a new action.</p>
+  </div>
+
+  <main>
+    <section aria-labelledby="why">
+      <h2 id="why" class="sr">Why Tuckaway</h2>
+      <div class="points">
+        <div><span class="mark"></span><h3>Set it once</h3><p>The mouse keeps five profiles in its own memory. Tuckaway writes them there, so your setup works on any computer, even one that has never seen Tuckaway.</p></div>
+        <div><span class="mark"></span><h3>Your words, your keyboard</h3><p>Actions read like “Copy” and “DPI down”. Shortcuts follow your keyboard layout, so on AZERTY, Select all really is Ctrl+A.</p></div>
+        <div><span class="mark"></span><h3>See it before you save it</h3><p>Lighting previews live on the mouse, and Apply lists every change in plain words before anything is written.</p></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="safe">
+      <h2 id="safe">Careful with your mouse</h2>
+      <ul class="safety">
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span><b>Backup first.</b> A full backup is saved before every write.</span></li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span><b>Checked twice.</b> Every sector is read back and compared byte for byte.</span></li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span><b>Only what you changed.</b> Unknown bytes are kept as they were.</span></li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span><b>Factory profiles untouched.</b> The ROM is never written, so Factory reset always works.</span></li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span><b>No stale writes.</b> If the mouse changed since it was loaded, nothing is written.</span></li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span><b>Undo anytime.</b> Restore any backup from the settings menu.</span></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="faq">
+      <h2 id="faq">Questions</h2>
+      <details><summary>Which mice does it support?</summary><p>The wired Logitech G502 HERO (USB id 046d:c08b). Other mice that use the same onboard format may follow; dumps from other models are welcome on GitHub.</p></details>
+      <details><summary>Do I need G HUB?</summary><p>No. Tuckaway talks to the mouse directly. Close G HUB while you use Tuckaway, or uninstall it.</p></details>
+      <details><summary>Windows says it protected my PC.</summary><p>The exe isn't code-signed yet. Choose More info, then Run anyway, or compare the file with SHA256SUMS.txt on the release page first.</p></details>
+      <details><summary>The lighting doesn't change on my mouse.</summary><p>Windows Dynamic Lighting can take over the LEDs. Turn it off for the mouse in Windows Settings; the Lighting tab tells you when it's in the way.</p></details>
+    </section>
+
+    <section class="closing">
+      <h2>Ready when your mouse is.</h2>
+      <a class="btn primary big" href="https://github.com/Maxikozie/Tuckaway/releases/latest/download/Tuckaway.exe">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
+        Download for Windows
+      </a>
+    </section>
+  </main>
+
+  <footer>
+    <span>Independent open-source project, not affiliated with Logitech. Logitech, G502 and HERO are trademarks of Logitech.</span>
+    <span><a href="https://github.com/Maxikozie/Tuckaway">GitHub</a> &nbsp; <a href="https://github.com/Maxikozie/Tuckaway/blob/main/LICENSE">MIT license</a></span>
+  </footer>
+
+  <script>
+    const captions = {
+      buttons: "Every button says what it does. Click one to give it a new action.",
+      performance: "Drag up to five DPI levels on one track and pick the report rate.",
+      lighting: "Pick a light on the mouse and watch the real one change as you drag.",
+    };
+    const tabs = [...document.querySelectorAll(".tabs button")];
+    const bar = document.querySelector(".tabs .bar");
+    const shots = [...document.querySelectorAll(".window img")];
+    const caption = document.getElementById("caption");
+    function show(view, focus) {
+      tabs.forEach((t) => t.setAttribute("aria-selected", String(t.dataset.view === view)));
+      shots.forEach((s) => s.classList.toggle("on", s.dataset.view === view));
+      caption.textContent = captions[view];
+      const t = tabs.find((t) => t.dataset.view === view);
+      bar.style.width = t.offsetWidth + "px";
+      bar.style.translate = t.offsetLeft + "px 0";
+      if (focus) t.focus();
+    }
+    tabs.forEach((t, i) => {
+      t.addEventListener("click", () => show(t.dataset.view));
+      t.addEventListener("keydown", (e) => {
+        const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+        if (d) show(tabs[(i + d + tabs.length) % tabs.length].dataset.view, true);
+      });
+    });
+    document.fonts.ready.then(() => show("buttons"));
+    addEventListener("resize", () => show(tabs.find((t) => t.getAttribute("aria-selected") === "true").dataset.view));
+    const header = document.querySelector("header");
+    addEventListener("scroll", () => header.classList.toggle("scrolled", scrollY > 8), { passive: true });
+  </script>
+</body>
+</html>
