@@ -40,6 +40,14 @@ cargo run -p gui
 
 - **HID collections.** HID++ is on interface 1, usage page `0xFF00`. On Windows these are separate paths: usage 1 = short reports `0x10` (`MI_01&Col04`), usage 2 = long reports `0x11` (`MI_01&Col05`). Device index is `0xFF`, our software id is `0x0C`. A "HID VHF Driver" device with the same VID:PID also exists (LampArray service); it is excluded by the usage-page filter.
 - **Features.** `0x8070` LED effects (2 zones: 1 = primary, 2 = logo; effects off/static/breathing/cycle), `0x2201` DPI (100–25600, step 50), `0x8060` report rate (1/2/4/8 ms), `0x8100` onboard profiles. Feature indexes are always resolved through Root.
+- **LED zones on the body** (confirmed by eye, 2026-10-29): zone 0 (location 1, "primary") is the 3-segment DPI strip; zone 1 (location 2, "logo") is the G logo.
+- **LED live preview.** 0x8070 fn 3 setZoneEffect `[zone, 11-byte effect, persist=0]` works in onboard mode and the user saw the colours. Both zones report `persistency_caps = 0`.
+  - An ACK is **not** proof that the colour is visible. Only the user looking at the mouse confirms it.
+  - **Software-control flag.** fn 7 getSWControl / fn 8 setSWControl, one byte: 1 = host drives the LEDs, 0 = the firmware drives them from the active profile. Solaar's 0x8070 "LED Control" setting is exactly this (read `0x70`, write `0x80`). The flag survives profile switches.
+  - **Preview** = setSWControl(1), then setZoneEffect.
+  - **Revert** = setSWControl(0). Do this on Discard, on app close, on profile switch and after Apply.
+  - Verified 2026-10-29: after clearing the flag, cycling with G9 showed each profile's own lighting (yellow, purple, cyan breathing, white). Re-selecting the profile, re-setting onboard mode or resending colours does **not** clear the flag.
+  - The LampArray service had left the flag at 1.
 - **Onboard memory.** 5 profiles, 5 ROM profiles, 11 buttons, 16 sectors × 256 B, profile format 2. Mechanical layout `0x0A` means a G-shift table and DPI shift are present.
 - **Sectors.** `0x0000` is the directory (`sector BE16, enabled, 00` per profile, then `FF FF 00 00`). `0x0001`–`0x0005` are the profiles; `0x0006`–`0x000F` are all zeros (unused). ROM is `0x0100` (directory) and `0x0101`–`0x0105` (profiles). ROM sectors have **no CRC**.
 - **Active profile.** getCurrentProfile and setCurrentProfile use the BE16 **sector** number.
@@ -119,6 +127,6 @@ Labels come from `MapVirtualKeyExW` on the active layout. Tests load the `000008
 - DPI, report-rate and LED writes; the `80 00 FF FF` disabled binding.
 - Live shortcut recording on the user's AZERTY keyboard. Layout tests and the injected-key hook test pass.
 - Macros are shown and preserved but not editable. Power mode, angle snapping and alternate LEDs are not editable.
-- Windows Dynamic Lighting (`logi_lamparray_service` is running) may override onboard LED colours.
+- **Windows Dynamic Lighting overrides the LEDs.** While `logi_lamparray_service` runs, our colours flash and are taken back at once (the user saw purple breathing). The user stopped and removed the service on 2026-10-29. The app must only detect the service and say so in the Lighting tab, never stop it.
 - Only `046d:c08b` is in `SUPPORTED_PRODUCT_IDS`.
 - At small window heights the binding editor needs scrolling; this is part of the redesign brief.
