@@ -19,6 +19,7 @@
 </p>
 
 <p align="center">
+  <a href="https://maxikozie.github.io/Tuckaway/">Website</a> ·
   <a href="#download">Download</a> ·
   <a href="#features">Features</a> ·
   <a href="#safe-by-design">Safe by design</a> ·
