@@ -1,0 +1,79 @@
+//! HID++ 2.0 feature ids (names as used by Solaar's `SupportedFeature`).
+
+pub const ROOT: u16 = 0x0000;
+pub const FEATURE_SET: u16 = 0x0001;
+pub const FIRMWARE_INFO: u16 = 0x0003;
+pub const DEVICE_NAME: u16 = 0x0005;
+pub const ADJUSTABLE_DPI: u16 = 0x2201;
+pub const REPORT_RATE: u16 = 0x8060;
+pub const COLOR_LED_EFFECTS: u16 = 0x8070;
+pub const RGB_EFFECTS: u16 = 0x8071;
+pub const ONBOARD_PROFILES: u16 = 0x8100;
+
+pub fn name(id: u16) -> &'static str {
+    match id {
+        0x0000 => "ROOT",
+        0x0001 => "FEATURE_SET",
+        0x0002 => "FEATURE_INFO",
+        0x0003 => "DEVICE_FW_VERSION",
+        0x0004 => "DEVICE_UNIT_ID",
+        0x0005 => "DEVICE_NAME",
+        0x0007 => "DEVICE_FRIENDLY_NAME",
+        0x0008 => "KEEP_ALIVE",
+        0x0020 => "CONFIG_CHANGE",
+        0x0021 => "CRYPTO_ID",
+        0x00C2 => "DFUCONTROL_SIGNED",
+        0x00C3 => "DFUCONTROL_SECURE",
+        0x00D0 => "DFU",
+        0x1000 => "BATTERY_STATUS",
+        0x1300 => "LED_CONTROL",
+        0x1802 => "DEVICE_RESET",
+        0x1803 => "GPIO_ACCESS",
+        0x1806 => "CONFIG_DEVICE_PROPS",
+        0x1811 => "OOBSTATE",
+        0x1813 => "CONFIG_DEVICE_PROPS",
+        0x1830 => "POWER_MODES",
+        0x1850 => "RENUMERATION",
+        0x1890 => "TEST_ONLY",
+        0x1891 => "TEST_ONLY",
+        0x18A1 => "LED_SW_CONTROL_TEST",
+        0x18B0 => "MONITOR_MODE",
+        0x1A00 => "PRESENTER_CONTROL",
+        0x1B00 => "REPROG_CONTROLS",
+        0x1B04 => "REPROG_CONTROLS_V4",
+        0x1E00 => "ENABLE_HIDDEN_FEATURES",
+        0x1E02 => "MANAGE_DEACTIVATABLE_FEATURES",
+        0x1E22 => "SPI_DIRECT_ACCESS",
+        0x1EB0 => "TDE_ACCESS",
+        0x1F1F => "FIRMWARE_PROPERTIES",
+        0x1F20 => "ADC_MEASUREMENT",
+        0x2100 => "VERTICAL_SCROLLING",
+        0x2110 => "SMART_SHIFT",
+        0x2120 => "HI_RES_SCROLLING",
+        0x2121 => "HIRES_WHEEL",
+        0x2130 => "LOWRES_WHEEL",
+        0x2200 => "MOUSE_POINTER",
+        0x2201 => "ADJUSTABLE_DPI",
+        0x2202 => "EXTENDED_ADJUSTABLE_DPI",
+        0x2205 => "POINTER_SPEED",
+        0x2230 => "ANGLE_SNAPPING",
+        0x2240 => "SURFACE_TUNING",
+        0x2250 => "XY_STATS",
+        0x2251 => "WHEEL_STATS",
+        0x8010 => "GKEY",
+        0x8020 => "MKEYS",
+        0x8030 => "MR",
+        0x8040 => "BRIGHTNESS_CONTROL",
+        0x8060 => "REPORT_RATE",
+        0x8061 => "EXTENDED_ADJUSTABLE_REPORT_RATE",
+        0x8070 => "COLOR_LED_EFFECTS",
+        0x8071 => "RGB_EFFECTS",
+        0x8080 => "PER_KEY_LIGHTING",
+        0x8081 => "PER_KEY_LIGHTING_V2",
+        0x8090 => "MODE_STATUS",
+        0x8100 => "ONBOARD_PROFILES",
+        0x8110 => "MOUSE_BUTTON_SPY",
+        0x8111 => "LATENCY_MONITORING",
+        _ => "?",
+    }
+}

@@ -1,0 +1,27 @@
+[package]
+name = "gui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "MouseForge - onboard mouse profile editor"
+
+[[bin]]
+name = "mouseforge"
+path = "src/main.rs"
+
+[dependencies]
+hidpp = { path = "../hidpp" }
+anyhow.workspace = true
+serde_json.workspace = true
+eframe = { version = "0.37", default-features = false, features = ["glow", "default_fonts"] }
+rfd = "0.17"
+egui = "0.37"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_UI_Input_KeyboardAndMouse", "Win32_UI_TextServices", "Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader", "Win32_Foundation"] }
+
+[build-dependencies]
+winresource = "0.1"
+
+[dev-dependencies]
+egui_kittest = { version = "0.37", features = ["eframe"] }
