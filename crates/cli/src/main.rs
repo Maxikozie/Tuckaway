@@ -10,12 +10,12 @@ use hidpp::profile::{Binding, Special};
 use hidpp::{device, layout, Device, HidApi};
 
 const USAGE: &str = "\
-usage: mouseforge-cli <command>
+usage: tuckaway-cli <command>
 
   list                      HID collections and supported mice
   dump [--raw] [--from F]   read, back up and decode the onboard memory
                             (--from decodes a backup file instead of the mouse)
-  backup [DIR]              save a raw backup (default: %LOCALAPPDATA%\\MouseForge\\backups)
+  backup [DIR]              save a raw backup (default: %LOCALAPPDATA%\\Tuckaway\\backups)
   restore FILE [--yes]      write a raw backup back (dry run without --yes)
   activate PROFILE          select the active onboard profile (1-based)
   set PROFILE SLOT BINDING [--gshift] [--yes]

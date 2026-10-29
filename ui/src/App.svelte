@@ -115,7 +115,7 @@
         const path = await open({
           title: "Restore from backup",
           defaultPath: await api.backupDir(),
-          filters: [{ name: "MouseForge backup", extensions: ["json"] }],
+          filters: [{ name: "Tuckaway backup", extensions: ["json"] }],
         });
         if (typeof path === "string") confirm = { kind: "restore", path };
       },

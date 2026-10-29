@@ -226,7 +226,7 @@ pub fn default_backup_dir() -> PathBuf {
     std::env::var_os("LOCALAPPDATA")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("MouseForge")
+        .join("Tuckaway")
         .join("backups")
 }
 

@@ -14,8 +14,18 @@
   let { title, confirm, danger = false, busy = null, children, onconfirm, oncancel }: Props = $props();
 
   let box: HTMLDivElement;
-  let ok: HTMLButtonElement | undefined = $state();
-  onMount(() => ok?.focus());
+  let cancel: HTMLButtonElement | undefined = $state();
+  // Start on the safe choice, and ignore a confirm that arrives with the
+  // click or keypress that opened the dialog: writes need a deliberate act.
+  let armed = false;
+  onMount(() => {
+    cancel?.focus();
+    const t = setTimeout(() => (armed = true), 300);
+    return () => clearTimeout(t);
+  });
+  function confirmNow() {
+    if (armed && !busy) onconfirm();
+  }
 
   function onKey(e: KeyboardEvent) {
     if (e.key === "Escape" && !busy) {
@@ -48,8 +58,8 @@
     {#if busy}
       <span class="busy" aria-live="polite">{busy}…</span>
     {:else}
-      <button class="ghost" onclick={oncancel}>Cancel</button>
-      <button class="primary" class:danger bind:this={ok} onclick={onconfirm}>{confirm}</button>
+      <button class="ghost" bind:this={cancel} onclick={oncancel}>Cancel</button>
+      <button class="primary" class:danger onclick={confirmNow}>{confirm}</button>
     {/if}
   </div>
 </div>

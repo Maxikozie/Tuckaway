@@ -1,4 +1,4 @@
-//! MouseForge desktop app: Tauri commands over the `hidpp` crate. All protocol
+//! Tuckaway desktop app: Tauri commands over the `hidpp` crate. All protocol
 //! work happens here and in `hidpp`; the Svelte frontend only renders.
 
 mod actions;
@@ -127,7 +127,7 @@ fn backup_dir() -> PathBuf {
     hidpp::backup::default_backup_dir()
 }
 
-/// `--mock [fixture.json]` or `MOUSEFORGE_MOCK=1|fixture.json` serves a raw
+/// `--mock [fixture.json]` or `TUCKAWAY_MOCK=1|fixture.json` serves a raw
 /// backup instead of the mouse.
 fn mock_path() -> Option<PathBuf> {
     let default = || {
@@ -139,14 +139,37 @@ fn mock_path() -> Option<PathBuf> {
             return Some(args.next().map(PathBuf::from).unwrap_or_else(default));
         }
     }
-    match std::env::var("MOUSEFORGE_MOCK") {
+    match std::env::var("TUCKAWAY_MOCK") {
         Ok(v) if v == "1" => Some(default()),
         Ok(v) if !v.is_empty() => Some(PathBuf::from(v)),
         _ => None,
     }
 }
 
+/// The app was called MouseForge; copy its backups into the new folder once.
+/// Never moves or deletes anything.
+fn adopt_old_backups() {
+    let new = hidpp::backup::default_backup_dir();
+    let Some(old) = new
+        .parent()
+        .and_then(|p| p.parent())
+        .map(|base| base.join("MouseForge").join("backups"))
+    else {
+        return;
+    };
+    if new.exists() || !old.is_dir() {
+        return;
+    }
+    if std::fs::create_dir_all(&new).is_err() {
+        return;
+    }
+    for e in std::fs::read_dir(&old).into_iter().flatten().flatten() {
+        let _ = std::fs::copy(e.path(), new.join(e.file_name()));
+    }
+}
+
 pub fn main() {
+    adopt_old_backups();
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
@@ -205,5 +228,5 @@ pub fn main() {
             backup_dir,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running MouseForge");
+        .expect("error while running Tuckaway");
 }

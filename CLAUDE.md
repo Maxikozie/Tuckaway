@@ -1,10 +1,12 @@
-# MouseForge
+# Tuckaway
+
+Formerly MouseForge. Public repo: https://github.com/Maxikozie/Tuckaway (MIT). README assets live in `docs/assets/`; the logo sources are `docs/assets/logo.svg` and `logo-small.svg` (16–32 px).
 
 Windows 11 app that edits the onboard memory of a wired mouse, USB `046d:c08b`, over HID++ 2.0. It needs no vendor software. Rust workspace plus a web frontend:
 
 - `crates/hidpp`: protocol, device I/O, sector decode/encode, backups. No GUI dependencies; uses `thiserror`. **Keep it as it is**; app-side protocol calls (LED preview) go through the public `Device::call`.
-- `crates/cli`: `mouseforge-cli` with `list`, `dump [--raw] [--from F]`, `backup`, `restore F [--yes]`, `activate N`, `set P SLOT BINDING [--gshift] [--yes]`. Commands that write are dry runs unless given `--yes`.
-- `crates/app`: `mouseforge`, a Tauri 2 app. All protocol logic stays in Rust; the frontend only renders.
+- `crates/cli`: `tuckaway-cli` with `list`, `dump [--raw] [--from F]`, `backup`, `restore F [--yes]`, `activate N`, `set P SLOT BINDING [--gshift] [--yes]`. Commands that write are dry runs unless given `--yes`.
+- `crates/app`: `tuckaway`, a Tauri 2 app. All protocol logic stays in Rust; the frontend only renders.
 - `ui/`: Svelte 5 + TypeScript (Vite) frontend for `crates/app`.
 
 App module map (`crates/app/src`):
@@ -35,11 +37,11 @@ cargo run -p cli -- dump
 ```
 
 - `npm --prefix ui install` once. Release: `npm --prefix ui run build`, then `cargo build --release -p app --features custom-protocol`. Debug builds of `app` load the Vite dev server (`localhost:5173`), so start `npm --prefix ui run dev` first.
-- **Mock mouse:** `MOUSEFORGE_MOCK=1` (or `--mock [file]`) serves `crates/hidpp/tests/data/c08b-2026-10-29.json` instead of the device. Writes change only memory; no backups are saved.
+- **Mock mouse:** `TUCKAWAY_MOCK=1` (or `--mock [file]`) serves `crates/hidpp/tests/data/c08b-2026-10-29.json` instead of the device. Writes change only memory; no backups are saved.
 - **Screenshots:** start the app with `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333`, then `py -3.14 ui/scripts/shot.py <dir> <name> 1280x800 1920x1080 [--click sel] [--type text] [--key K]` (Python Playwright over CDP).
 - `cargo run -p cli -- dump` is read-only, but it saves a backup.
 - Release builds are static CRT (`.cargo/config.toml`), have no console (`windows_subsystem` in release only), use LTO and strip. `tauri-build` embeds the icon and version info from `crates/app/tauri.conf.json`.
-- Kill a running `mouseforge.exe` before rebuilding, or linking fails with "Access is denied".
+- Kill a running `tuckaway.exe` before rebuilding, or linking fails with "Access is denied".
 - Keep clippy clean and run `cargo fmt`.
 
 ## Verified on the user's mouse (firmware U1 27.03.B0010)
@@ -106,10 +108,11 @@ They store **physical** HID usages; the user's layout is Belgian AZERTY.
 
 ## Backups and fixtures
 
-- **Backups:** `%LOCALAPPDATA%\MouseForge\backups\backup-<UTC stamp>-<label>.json` (hex of every user sector, the ROM directory and the ROM profiles). The app saves one on first connect per session and before every write, restore or factory reset. The repo's `backups/` folder (gitignored) holds early CLI probes.
+- **Backups:** `%LOCALAPPDATA%\Tuckaway\backups\backup-<UTC stamp>-<label>.json` (hex of every user sector, the ROM directory and the ROM profiles). The app saves one on first connect per session and before every write, restore or factory reset. The repo's `backups/` folder (gitignored) holds early CLI probes.
 - **Test fixture:** `crates/hidpp/tests/data/c08b-2026-10-29.json` is the real dump from before any write; `real_dump.rs`, the app's worker tests and the mock mouse use it.
-- **`assets/local/`** (gitignored, never commit it) holds the reference render `g502-hero.png` and, at the user's request, the SVG traced over it: `mouse.svg`, built by `assets/local/trace/build_mouse.py`.
-  - Vite embeds `mouse.svg` when the file exists; otherwise the app uses the committed plain outline `ui/src/lib/fallback-mouse.svg` (an original drawing, no logo).
+- **`assets/local/`** (gitignored, never commit it) holds the reference render `g502-hero.png`, the generator `assets/local/trace/build_mouse.py` and `mouse.svg`, the traced drawing **with** the manufacturer's G logo.
+  - **Public drawing:** at the user's request the same drawing **without** the logo is committed as `ui/src/lib/mouse.svg` (`build_mouse.py --public` writes it). The logo LED zone is a plain round light window there.
+  - **Public builds** (`VITE_PUBLIC=1 npm --prefix ui run build`) always use the committed one. Local builds use `assets/local/mouse.svg` when it exists. Check a public bundle has no `A46.5 46.5` (the G arc) before releasing.
   - Both share viewBox `880 110 700 1190`, `g[data-slot]` hit groups and `g[data-zone]` LED groups with a `.led-glow` overlay coloured by `--led-color` / `--led-on`.
 
 ## Tauri / UI notes
@@ -117,6 +120,7 @@ They store **physical** HID usages; the user's layout is Belgian AZERTY.
 - Commands that touch the mouse are `async` and run `Worker::call` on `spawn_blocking`. The latest device event is cached so a frontend that loads late gets it from `device_state`.
 - Svelte 5 runes. A component must never read a nulled `$state` during its outro transition (the action picker once broke that way); keep the last value in a separate variable.
 - The mouse art is injected with `{@html}`, so its CSS uses `:global(...)`.
+- The Apply/Restore/Reset dialog opens focused on Cancel and ignores a confirm in its first 300 ms (two scripted runs once confirmed it without a deliberate click; never reproduced). Keep that guard.
 - Every control needs an accessible name; callouts are labelled `"<button name>: <action>"`, which the screenshot script uses as selectors.
 
 ## Open issues / not yet verified on hardware

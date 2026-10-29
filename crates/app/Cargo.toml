@@ -3,14 +3,14 @@ name = "app"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "MouseForge - onboard mouse profile editor"
+description = "Tuckaway - onboard mouse profile editor"
 
 [lib]
-name = "mouseforge_app"
+name = "tuckaway_app"
 path = "src/lib.rs"
 
 [[bin]]
-name = "mouseforge"
+name = "tuckaway"
 path = "src/main.rs"
 
 [dependencies]

@@ -105,6 +105,7 @@ class AppState {
   }
 
   async apply() {
+    if (this.busy) return false;
     const edits = this.work
       .filter((p) => this.isChanged(p.index))
       .map((p) => ({ index: p.index, enabled: p.enabled, profile: p.profile }));

@@ -1,8 +1,10 @@
-// The mouse illustration. The detailed one is traced locally and never
-// committed (assets/local/mouse.svg); without it the plain outline is used.
+// The mouse illustration. `mouse.svg` is the traced drawing without the
+// manufacturer logo (the logo LED zone is a round light window) and is what
+// public builds ship. A local build may use assets/local/mouse.svg instead,
+// the same drawing with the logo, which is never committed.
 // Both share one viewBox, the same `data-slot` hit groups and LED groups.
 
-import fallback from "./fallback-mouse.svg?raw";
+import committed from "./mouse.svg?raw";
 
 const local = import.meta.glob("../../../assets/local/mouse.svg", {
   query: "?raw",
@@ -10,7 +12,9 @@ const local = import.meta.glob("../../../assets/local/mouse.svg", {
   eager: true,
 }) as Record<string, string>;
 
-export const mouseArt: string = Object.values(local)[0] ?? fallback;
+// Public builds (VITE_PUBLIC=1) never ship the local drawing.
+export const mouseArt: string =
+  import.meta.env.VITE_PUBLIC === "1" ? committed : (Object.values(local)[0] ?? committed);
 
 export const VIEWBOX = { x: 880, y: 110, w: 700, h: 1190 };
 

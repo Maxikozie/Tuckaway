@@ -39,6 +39,6 @@ pub fn service_running(_: &str) -> bool {
 mod tests {
     #[test]
     fn missing_service_is_not_running() {
-        assert!(!super::service_running("mouseforge_no_such_service"));
+        assert!(!super::service_running("tuckaway_no_such_service"));
     }
 }

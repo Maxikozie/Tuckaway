@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34353b"/>
+      <stop offset="1" stop-color="#18181b"/>
+    </linearGradient>
+    <linearGradient id="shell" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#f7f4ee"/>
+      <stop offset="1" stop-color="#c9c3b8"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffc35a"/>
+      <stop offset="1" stop-color="#f08a24"/>
+    </linearGradient>
+    <filter id="drop" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity=".45"/>
+    </filter>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+  <rect width="256" height="256" rx="58" fill="url(#tile)"/>
+  <rect x="1.5" y="1.5" width="253" height="253" rx="56.5" fill="none" stroke="#fff" stroke-opacity=".07" stroke-width="3"/>
+  <g filter="url(#drop)">
+    <path d="M128 40C163 40 184 66 184 106V156C184 192 160 216 128 216S72 192 72 156V106C72 66 93 40 128 40Z" fill="url(#shell)"/>
+  </g>
+  <path d="M128 42V104M74 108Q128 120 182 108" fill="none" stroke="#3a3a40" stroke-width="5" stroke-linecap="round"/>
+  <rect x="120" y="60" width="16" height="30" rx="8" fill="#3a3a40"/>
+  <path d="M110 158H146" stroke="#3a3a40" stroke-width="6" stroke-linecap="round"/>
+  <path d="M112 132L128 147L144 132" fill="none" stroke="url(#amber)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)" opacity=".55"/>
+  <path d="M112 132L128 147L144 132" fill="none" stroke="url(#amber)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "MouseForge",
-  "version": "0.2.0",
-  "identifier": "app.mouseforge",
+  "productName": "Tuckaway",
+  "version": "1.0.0",
+  "identifier": "app.tuckaway",
   "build": {
     "frontendDist": "../../ui/dist",
     "devUrl": "http://localhost:5173",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "MouseForge",
+        "title": "Tuckaway",
         "width": 1280,
         "height": 800,
         "minWidth": 1100,
