@@ -1,0 +1,114 @@
+@property --cx {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+:root {
+  --bg: #1c1c1f;
+  --stage: #36373c;
+  --raised: #27272b;
+  --raised-2: #303035;
+  --text: #ecebe7;
+  --text-2: #a7a59f;
+  --text-3: #75736e;
+  --hair: rgb(255 255 255 / 0.08);
+  --hair-2: rgb(255 255 255 / 0.14);
+  --danger: #f06a5b;
+  --accent: #e6e2d9;
+  --accent-ink: #17171a;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t: 180ms;
+
+  --fs-ui: 13.5px;
+  --fs-action: 15px;
+  --fs-cap: 12px;
+  --fs-tab: 14px;
+  --font: "Instrument Sans Variable", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-ui);
+  font-weight: 450;
+  line-height: 1.35;
+  font-variation-settings: "wdth" 100;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
+
+#app {
+  height: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (min-width: 1600px) and (min-height: 950px) {
+  :root {
+    --fs-ui: 14.5px;
+    --fs-action: 17px;
+    --fs-cap: 13px;
+    --fs-tab: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+}

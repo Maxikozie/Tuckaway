@@ -1,38 +1,44 @@
 # MouseForge
 
-Windows 11 app that edits the onboard memory of a wired mouse, USB `046d:c08b`, over HID++ 2.0. It needs no vendor software. Rust workspace with three crates:
+Windows 11 app that edits the onboard memory of a wired mouse, USB `046d:c08b`, over HID++ 2.0. It needs no vendor software. Rust workspace plus a web frontend:
 
-- `crates/hidpp`: protocol, device I/O, sector decode/encode, backups. No GUI dependencies; uses `thiserror`.
+- `crates/hidpp`: protocol, device I/O, sector decode/encode, backups. No GUI dependencies; uses `thiserror`. **Keep it as it is**; app-side protocol calls (LED preview) go through the public `Device::call`.
 - `crates/cli`: `mouseforge-cli` with `list`, `dump [--raw] [--from F]`, `backup`, `restore F [--yes]`, `activate N`, `set P SLOT BINDING [--gshift] [--yes]`. Commands that write are dry runs unless given `--yes`.
-- `crates/gui`: `mouseforge`, built on eframe/egui 0.37.
+- `crates/app`: `mouseforge`, a Tauri 2 app. All protocol logic stays in Rust; the frontend only renders.
+- `ui/`: Svelte 5 + TypeScript (Vite) frontend for `crates/app`.
 
-GUI module map:
+App module map (`crates/app/src`):
 
 | file | what it does |
 |------|--------------|
-| `app.rs` | UI and state |
-| `worker.rs` | device thread, hot-plug, all I/O; talks to the UI over `Cmd`/`Ev` channels |
-| `schematic.rs` | painter-drawn mouse with hotspots |
-| `keycapture.rs` | scancode hook and layout labels |
-| `theme.rs` | dark theme; Segoe UI fallback font |
-| `ui_tests.rs` | kittest tests |
+| `lib.rs` | Tauri commands, mock selection, LED release on window close |
+| `worker.rs` | device thread, hot-plug, all I/O; requests carry a reply channel, pushes go out as the `device` event (`Ev`) |
+| `mouse.rs` | `Mouse`/`Connector` traits: the real mouse, and the mock that serves a raw backup from memory |
+| `actions.rs` | action catalog and friendly names ("Copy", "DPI down"); presets resolved on the active layout |
+| `keymap.rs` | W3C `KeyboardEvent.code` → HID usage, layout-aware key labels |
+| `winsvc.rs` | read-only check whether `logi_lamparray_service` runs |
+
+Frontend (`ui/src`): `App.svelte` (shell, modals, settings actions), `lib/state.svelte.ts` (snapshot base vs working copy), `lib/Mouse.svelte` (SVG art, hit groups, LED glow), `lib/Callouts.svelte`, `lib/ActionPicker.svelte`, `lib/TopBar.svelte`, `lib/PerformancePanel.svelte` + `lib/DpiTrack.svelte` (log-scale DPI stops; pure logic in `lib/dpi.ts`), `lib/LightingPanel.svelte` + `lib/ColorArea.svelte` (live preview goes through `app.setLed`, which hands LEDs back once nothing differs from the profile), `lib/names.ts` (change list for the Apply confirmation), `lib/color.ts` (accent clamp).
 
 `README.md` has the full protocol write-up and user docs. `ref/` (gitignored) holds clones of libratbag, Solaar and piper: the sources for every protocol detail.
 
 ## Build / test / run
 
 ```bash
-cargo build --release
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
-cargo test -p gui -- --ignored hook
+npm --prefix ui run check
+npm --prefix ui test
+npm --prefix ui run dev
+cargo run -p app
 cargo run -p cli -- dump
-cargo run -p gui
 ```
 
-- The `--ignored hook` test injects real Right Ctrl + F24 keystrokes, which is why it is opt-in.
+- `npm --prefix ui install` once. Release: `npm --prefix ui run build`, then `cargo build --release -p app --features custom-protocol`. Debug builds of `app` load the Vite dev server (`localhost:5173`), so start `npm --prefix ui run dev` first.
+- **Mock mouse:** `MOUSEFORGE_MOCK=1` (or `--mock [file]`) serves `crates/hidpp/tests/data/c08b-2026-10-29.json` instead of the device. Writes change only memory; no backups are saved.
+- **Screenshots:** start the app with `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333`, then `py -3.14 ui/scripts/shot.py <dir> <name> 1280x800 1920x1080 [--click sel] [--type text] [--key K]` (Python Playwright over CDP).
 - `cargo run -p cli -- dump` is read-only, but it saves a backup.
-- Release builds are static CRT (`.cargo/config.toml`), have no console (`windows_subsystem` in release only), use LTO and strip, and embed an icon and version info (`crates/gui/build.rs` via winresource; needs the Windows SDK `rc.exe`).
+- Release builds are static CRT (`.cargo/config.toml`), have no console (`windows_subsystem` in release only), use LTO and strip. `tauri-build` embeds the icon and version info from `crates/app/tauri.conf.json`.
 - Kill a running `mouseforge.exe` before rebuilding, or linking fails with "Access is denied".
 - Keep clippy clean and run `cargo fmt`.
 
@@ -84,49 +90,38 @@ cargo run -p gui
 - After writing: `memory::finish` sets onboard mode and re-selects the active profile, then checks the mode.
 - Encoding is a **patch** over the original bytes. Only changed fields are rewritten, so unknown and reserved bytes survive and an unedited profile re-encodes byte-exact.
 - `OnboardMemory::plan` refuses to leave no profile enabled.
-- The GUI's apply re-reads the mouse first. If its memory changed since load, nothing is written and the GUI reloads.
+- Apply re-reads the mouse first. If its memory changed since the worker loaded it, nothing is written and the app reloads.
+- After Apply, restore and factory reset the worker clears the LED software-control flag (`led_release`).
 - **Hardware writes need the user's explicit OK.** Confirm unknown slots with a harmless test binding first; numpad keys are layout-independent.
 
 ## Keyboard bindings
 
-They store **physical** HID usages; the user's layout is Belgian AZERTY. Capture uses a `WH_KEYBOARD_LL` hook because egui's `physical_key`:
+They store **physical** HID usages; the user's layout is Belgian AZERTY.
 
-- merges the numpad into the digit row;
-- has no right-hand modifiers;
-- turns Ctrl+C/X/V into clipboard events.
-
-Labels come from `MapVirtualKeyExW` on the active layout. Tests load the `0000080C` and `00000409` layouts without activating them.
+- **Recording** reads `KeyboardEvent.code` in the webview. It is physical, tells the numpad from the digit row and left from right modifiers, and `preventDefault` stops Ctrl+C from copying. No keyboard hook is needed.
+- **Labels and presets** come from `MapVirtualKeyExW` on the foreground window's layout. "Select all" on AZERTY is Ctrl + usage `0x14` (the key US calls Q). Tests load the `0000080C` and `00000409` layouts without activating them.
 
 ## Backups and fixtures
 
 - **Backups:** `%LOCALAPPDATA%\MouseForge\backups\backup-<UTC stamp>-<label>.json` (hex of every user sector, the ROM directory and the ROM profiles). The GUI saves one on first connect per session and before every write, restore or factory reset. The repo's `backups/` folder (gitignored) holds early CLI probes.
-- **Test fixture:** `crates/hidpp/tests/data/c08b-2026-10-29.json` is the real dump from before any write; `real_dump.rs` and `gui/src/ui_tests.rs` use it.
-- **`assets/local/`** (gitignored) holds the user's reference photo of the mouse. Use it only to get button positions and proportions right. Never embed, trace or ship it: no manufacturer images, logos or trademarks in the app. The schematic must stay an original drawing.
+- **Test fixture:** `crates/hidpp/tests/data/c08b-2026-10-29.json` is the real dump from before any write; `real_dump.rs`, the app's worker tests and the mock mouse use it.
+- **`assets/local/`** (gitignored, never commit it) holds the reference render `g502-hero.png` and, at the user's request, the SVG traced over it: `mouse.svg`, built by `assets/local/trace/build_mouse.py`.
+  - Vite embeds `mouse.svg` when the file exists; otherwise the app uses the committed plain outline `ui/src/lib/fallback-mouse.svg` (an original drawing, no logo).
+  - Both share viewBox `880 110 700 1190`, `g[data-slot]` hit groups and `g[data-zone]` LED groups with a `.led-glow` overlay coloured by `--led-color` / `--led-on`.
 
-## egui 0.37 / GUI notes (for the redesign)
+## Tauri / UI notes
 
-- **API.**
-  - `eframe::App::ui(&mut self, ui, frame)` replaces `update`.
-  - Panels are `egui::Panel::top/left/bottom(..).show(ui, ..)`.
-  - Modals use `egui::Modal::new(Id::unique(..)).show(ctx, ..)`.
-  - Use `ui.scope_id()`, not `ui.id()`.
-- **ScrollArea** inherits the parent layout. Wrap its contents in `ui.vertical` inside a horizontal parent (this bug happened once).
-- **Click areas over children.** A whole-card click area must be registered *before* its children: `ui.scope_builder(UiBuilder::new().sense(click), ..)`. Otherwise it steals clicks from checkboxes inside it.
-- **Glyphs.** The default font lacks arrows and symbols. `theme.rs` adds Segoe UI as a fallback, but painter shapes are preferred for icons.
-- **kittest UI tests:**
-  - They query AccessKit labels, so renaming visible labels breaks them.
-  - Every widget needs an accessible name; the harness's accessibility check fails otherwise.
-  - Hotspots are labelled `"mouse <slot>: <binding>"`.
-  - Use `h.step()` instead of `h.run()` while a spinner shows.
-- **Worker boundary.** Keep the `Worker` `Cmd`/`Ev` interface. Tests build `App::with_worker` with fake channels.
+- Commands that touch the mouse are `async` and run `Worker::call` on `spawn_blocking`. The latest device event is cached so a frontend that loads late gets it from `device_state`.
+- Svelte 5 runes. A component must never read a nulled `$state` during its outro transition (the action picker once broke that way); keep the last value in a separate variable.
+- The mouse art is injected with `{@html}`, so its CSS uses `:global(...)`.
+- Every control needs an accessible name; callouts are labelled `"<button name>: <action>"`, which the screenshot script uses as selectors.
 
 ## Open issues / not yet verified on hardware
 
 - Physical unplug/replug (only tested with a simulated disconnect).
-- An Apply from the GUI. It uses the same lib path as the CLI writes, which did work.
+- An Apply from the app on the real mouse (tested on the mock only). It uses the same lib path as the CLI writes, which did work.
 - DPI, report-rate and LED writes; the `80 00 FF FF` disabled binding.
-- Live shortcut recording on the user's AZERTY keyboard. Layout tests and the injected-key hook test pass.
+- Live shortcut recording on the user's AZERTY keyboard (layout tests pass; recording tested with injected keys).
 - Macros are shown and preserved but not editable. Power mode, angle snapping and alternate LEDs are not editable.
 - **Windows Dynamic Lighting overrides the LEDs.** While `logi_lamparray_service` runs, our colours flash and are taken back at once (the user saw purple breathing). The user stopped and removed the service on 2026-10-29. The app must only detect the service and say so in the Lighting tab, never stop it.
 - Only `046d:c08b` is in `SUPPORTED_PRODUCT_IDS`.
-- At small window heights the binding editor needs scrolling; this is part of the redesign brief.

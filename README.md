@@ -21,14 +21,17 @@ Requirements:
   with C++" workload). The build uses its `rc.exe` to embed the icon and version info.
 
 ```bash
-cargo build --release
+npm --prefix ui install
+npm --prefix ui run build
+cargo build --release -p app --features custom-protocol
+cargo build --release -p cli
 ```
 
 Outputs:
 
 | file | what |
 |------|------|
-| `target/release/mouseforge.exe` | the GUI, a single self-contained exe |
+| `target/release/mouseforge.exe` | the app (Tauri 2 + Svelte), a single exe; needs the WebView2 runtime that ships with Windows 11 |
 | `target/release/mouseforge-cli.exe` | debug CLI |
 
 The release build is self-contained:
@@ -37,7 +40,7 @@ The release build is self-contained:
   linked statically and no VC++ redistributable is needed. The exe imports only
   Windows system DLLs.
 * `#![windows_subsystem = "windows"]` (release only) means no console window opens.
-* `crates/gui/build.rs` embeds `assets/icon.ico` and version information.
+* `tauri-build` embeds the icon and version information from `crates/app/tauri.conf.json`.
 * The release profile uses LTO, `codegen-units = 1`, `strip` and `panic = "abort"`.
 
 Run the tests and lints:
@@ -50,11 +53,17 @@ cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-One test injects real (harmless) keystrokes, Right Ctrl + F24, to exercise the
-keyboard hook end to end. It is ignored by default; run it with:
+```bash
+npm --prefix ui run check
+npm --prefix ui test
+```
+
+To work on the app without the mouse, run it on the mock, which serves the test
+fixture from memory (writes stay in memory, no backups are saved):
 
 ```bash
-cargo test -p gui -- --ignored hook
+npm --prefix ui run dev
+MOUSEFORGE_MOCK=1 cargo run -p app
 ```
 
 ## Using the app
@@ -301,33 +310,27 @@ directory's enabled flags.
 * **Restore.** Restoring writes only CRC-valid user sectors that differ from the mouse.
 * **Profiles.** At least one profile must stay enabled.
 
-### Key capture (`crates/gui/src/keycapture.rs`)
+### Key capture
 
-egui's `physical_key` can't be used, for three reasons:
-
-* it merges the numpad digits into the top-row digits;
-* it has no right-hand modifiers;
-* it turns Ctrl+C/X/V into clipboard events chosen by the *logical* key.
-
-While recording, the app installs a low-level keyboard hook (`WH_KEYBOARD_LL`)
-and reads scancodes (with the E0 "extended" flag). The fake Left Ctrl that
-Windows sends with AltGr is ignored. Scancodes map to HID usages with a fixed
-table in `hidpp::keys`.
+Shortcuts are recorded in the webview from `KeyboardEvent.code`, which names the
+*physical* key: it tells the numpad from the digit row and left from right
+modifiers, and `preventDefault` keeps Ctrl+C from copying. The fake Left Ctrl that
+Windows sends with AltGr is dropped. `crates/app/src/keymap.rs` maps codes to HID
+usages.
 
 Labels come from the active layout: scancode → virtual key → character with
-`MapVirtualKeyExW`. Tests load the Belgian AZERTY (`0000080C`) and US (`00000409`)
-layouts without activating them and check that:
-
-* the AZERTY keys A, Z, Q, W and M store the US-position usages Q, W, A, Z and `;`;
-* those usages show as A, Z, Q, W and M on AZERTY;
-* the same usages show as Q, W, A, Z and `;` on US.
+`MapVirtualKeyExW`. The one-click presets (Copy, Paste, Select all, …) are resolved
+the same way, so "Select all" on Belgian AZERTY sends Ctrl + the key US calls Q.
+Tests load the Belgian AZERTY (`0000080C`) and US (`00000409`) layouts without
+activating them.
 
 ## Project layout
 
 ```text
 crates/hidpp   protocol, device I/O, sector decode/encode, backups (no GUI deps)
 crates/cli     mouseforge-cli
-crates/gui     mouseforge (eframe/egui), device worker thread, schematic, key capture
+crates/app     mouseforge (Tauri 2): commands, device worker thread, mock mouse, key labels
+ui/            Svelte 5 + TypeScript frontend
 crates/hidpp/tests/data   raw dump of a real 046d:c08b used by the round-trip tests
 ```
 
