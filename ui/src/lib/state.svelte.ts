@@ -30,10 +30,8 @@ class AppState {
   current = $derived(this.work.find((p) => p.index === this.selected) ?? null);
   pending = $derived(changes(this.base, this.work));
   dirty = $derived(this.pending.length > 0);
-  accent = $derived.by(() => {
-    const active = this.work.find((p) => p.sector === this.activeSector);
-    return accentFrom(ledColor(active?.profile.leds[0]));
-  });
+  // follows the profile on screen, including unsaved lighting edits
+  accent = $derived(accentFrom(ledColor(this.current?.profile.leds[0])));
 
   async start() {
     await api.onDevice((e) => this.onDevice(e));

@@ -70,48 +70,41 @@ MOUSEFORGE_MOCK=1 cargo run -p app
 
 1. Plug in the mouse. The app finds it by itself and reconnects if it is unplugged
    and plugged back in. On the first connection in each session it saves a raw backup.
-2. **Profiles** (left): pick the profile to edit and tick *Enabled* for the ones the
-   profile button should cycle through. *Make active* switches the mouse to that
-   profile immediately.
-3. **Buttons**: click a button on the drawing or in the list, then choose an action:
-   * mouse button
-   * keyboard shortcut
-   * media key
-   * DPI up/down/cycle/default/shift
-   * profile next/previous/cycle
-   * G-shift, wheel tilt or scroll
-   * disabled
-
-   The *G-shift layer* toggle edits the second set of bindings that is active while a
-   button bound to *G-shift (hold)* is held.
-4. **Keyboard shortcuts**: click the big field and press the combination. The key is
-   stored by **physical position** (HID usage), and the label shows what that key is
-   on your current keyboard layout. On Belgian AZERTY, the key labelled A is stored
-   as the usage for US "Q", shows as "A", and types "A" when the mouse sends it.
-   You can also tick modifiers and pick a key from the list. While recording, the
-   keys are swallowed: the Windows key, Alt+F4 and so on won't act. Recording stops
-   after 15 s or when the window loses focus.
-5. **DPI & report rate**: up to five DPI levels (snapped to what the sensor
-   supports), the default level, the shift ("sniper") level and the polling rate.
-6. **Lighting** (shown only if the mouse reports LED zones): off, static, breathing
-   or colour cycle for the main zone and the logo. If Windows *Dynamic Lighting* is
-   enabled, Windows may override these colours while it is running.
-7. **Apply to mouse**: an unsaved-changes counter shows when you have edits. Apply
-   shows a preview of every change and every sector that will be written, then:
+2. **Profiles** (top left): the five pills select the profile you edit. The dot is
+   that profile's LED colour; a ring marks the profile active on the mouse, a hollow
+   dot a disabled one. Right-click a pill (or use ⋯) to *Make active*, *Enable* or
+   *Disable*. The app's accent colour follows the selected profile's lighting.
+3. **Buttons**: every button on the drawing has a callout with its current action.
+   Click a callout or the button itself to pick a new action from a searchable list
+   grouped as Mouse, Shortcuts, Media, DPI, Profiles and Disabled. Copy, Paste, Cut,
+   Undo, Redo, Select all and Save are one click; *Record a shortcut* takes any other
+   combination.
+   * Shortcuts are stored by **physical key** (HID usage) and labelled for your
+     current keyboard layout. On Belgian AZERTY, "Select all" sends Ctrl + the key
+     US calls Q, which types Ctrl+A.
+   * The *G-shift layer* switch shows and edits the second set of bindings, active
+     while a button set to *G-shift* is held.
+4. **Performance**: drag up to five DPI stops along the track (log scale, snapped to
+   the sensor's 50-DPI steps). Click a stop to type an exact value, make it the
+   default or the DPI-shift level, or remove it; *Add level* adds one. The report
+   rate is 125, 250, 500 or 1000 Hz.
+5. **Lighting**: click the DPI lights or the logo on the drawing, then pick Static,
+   Breathing, Colour cycle or Off, a colour, and speed and brightness where the
+   effect has them. The drawing and the mouse itself preview the effect live (in RAM
+   only); the mouse goes back to its saved lighting on Discard, after Apply, on a
+   profile switch and when the app closes. If Windows *Dynamic Lighting* (the
+   Logitech LampArray service) is running, it overrides the LEDs and the tab says so.
+6. **Apply** appears with a change count when there are edits. It lists every change
+   in words ("G7: DPI down → Copy") and then:
    1. backs up the current memory to disk;
    2. writes each changed sector;
    3. reads each sector back and compares it byte for byte;
    4. switches the mouse to onboard mode and re-selects the active profile;
    5. re-reads everything and checks that it matches the edit.
 
-**Backup & restore** menu:
-
-* back up now
-* restore a backup file
-* open the backups folder
-* export / import the selected profile as JSON
-* factory reset (copies the factory profiles from ROM into the user profiles)
-* reload from the mouse
+The **settings** menu (top right) has: back up now, restore from a backup, import and
+export the selected profile as JSON, and factory reset (copies the factory profiles
+from ROM into the user profiles).
 
 Backups live in `%LOCALAPPDATA%\MouseForge\backups`. They are JSON files holding
 the hex of every user sector plus the ROM directory and ROM profiles.

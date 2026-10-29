@@ -67,16 +67,19 @@ cargo run -p cli -- dump
 - **Button slots** (`hidpp::layout`). 0 left, 1 right, 2 wheel click, 3 back (G4), 4 forward (G5), 5 sniper (G6), 6 G7, 7 G8, 8 G9 (profile cycle), 9 tilt right, 10 tilt left.
   - Derived from the ROM default bindings plus piper's `logitech-g502.svg`.
   - **Slots 6 and 7 are confirmed on hardware** with a test binding: slot 6 is the rear button left of left click (G7), slot 7 the front one (G8).
+  - **Slot 4 is confirmed** (2026-10-29): a Num 5 test binding typed "5" from the front thumb button (G5).
   - The rest are inferred from the defaults; they have not been individually tested.
 - **"Disabled" encoding.** Written as `80 00 FF FF` (Solaar's NO_ACTION). libratbag writes type `0x00`, which decodes as a macro, so it is deliberately not followed. Not yet tested on hardware.
 - **Function bindings.** Written as `90 code FF FF`, which matches the factory data.
 
-**Current mouse state** (2026-10-29):
+**Current mouse state** (2026-10-29, byte-identical to the first-connect backup `backup-20261029-155438-connect.json`):
 
 - Profile 1 is disabled; profiles 2–5 are enabled.
 - Profiles 3 and 4 have G7 = Ctrl + C and G8 = Ctrl + V. Profile 3 was like that from the factory; profile 4 was written by us.
 - Profiles 2 and 5 still have DPI down/up on G7/G8.
 - The active profile changes when the user presses G9.
+
+**New app verified on the real mouse** (2026-10-29, release build): read and display match the memory; RAM-only LED preview visible; G9 profile switch and Discard hand the LEDs back; an Apply on profile 4 (logo colour, 500 Hz, a second DPI level, G5 = Num 5) was confirmed by eye and by read-back, and a second Apply restored the sector byte for byte.
 
 ## Write safety rules (enforced in code; keep them)
 
@@ -103,7 +106,7 @@ They store **physical** HID usages; the user's layout is Belgian AZERTY.
 
 ## Backups and fixtures
 
-- **Backups:** `%LOCALAPPDATA%\MouseForge\backups\backup-<UTC stamp>-<label>.json` (hex of every user sector, the ROM directory and the ROM profiles). The GUI saves one on first connect per session and before every write, restore or factory reset. The repo's `backups/` folder (gitignored) holds early CLI probes.
+- **Backups:** `%LOCALAPPDATA%\MouseForge\backups\backup-<UTC stamp>-<label>.json` (hex of every user sector, the ROM directory and the ROM profiles). The app saves one on first connect per session and before every write, restore or factory reset. The repo's `backups/` folder (gitignored) holds early CLI probes.
 - **Test fixture:** `crates/hidpp/tests/data/c08b-2026-10-29.json` is the real dump from before any write; `real_dump.rs`, the app's worker tests and the mock mouse use it.
 - **`assets/local/`** (gitignored, never commit it) holds the reference render `g502-hero.png` and, at the user's request, the SVG traced over it: `mouse.svg`, built by `assets/local/trace/build_mouse.py`.
   - Vite embeds `mouse.svg` when the file exists; otherwise the app uses the committed plain outline `ui/src/lib/fallback-mouse.svg` (an original drawing, no logo).
@@ -119,9 +122,10 @@ They store **physical** HID usages; the user's layout is Belgian AZERTY.
 ## Open issues / not yet verified on hardware
 
 - Physical unplug/replug (only tested with a simulated disconnect).
-- An Apply from the app on the real mouse (tested on the mock only). It uses the same lib path as the CLI writes, which did work.
-- DPI, report-rate and LED writes; the `80 00 FF FF` disabled binding.
+- The `80 00 FF FF` disabled binding. (DPI, report-rate and LED writes are verified by read-back; the LED colour also by eye.)
 - Live shortcut recording on the user's AZERTY keyboard (layout tests pass; recording tested with injected keys).
+- The accent follows the **selected** profile's DPI-zone colour (the user asked for this over "active profile").
+- Python from the Windows Python install manager sees a virtualised `%LOCALAPPDATA%`: newer backups are invisible to it. Read backups with Node or the CLI.
 - Macros are shown and preserved but not editable. Power mode, angle snapping and alternate LEDs are not editable.
 - **Windows Dynamic Lighting overrides the LEDs.** While `logi_lamparray_service` runs, our colours flash and are taken back at once (the user saw purple breathing). The user stopped and removed the service on 2026-10-29. The app must only detect the service and say so in the Lighting tab, never stop it.
 - Only `046d:c08b` is in `SUPPORTED_PRODUCT_IDS`.
